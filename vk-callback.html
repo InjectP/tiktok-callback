@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>VK Auth Redirect</title>
+</head>
+<body>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        
+        if (code) {
+            const redirectUrl = `chainapp://vk-callback?code=${code}${state ? '&state=' + state : ''}`;
+            window.location.href = redirectUrl;
+        } else {
+            document.body.innerHTML = '<p>Authorization failed. No code parameter.</p>';
+        }
+    </script>
+    <p>Redirecting to app...</p>
+</body>
+</html>
