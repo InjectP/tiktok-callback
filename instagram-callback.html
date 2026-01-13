@@ -3,25 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <title>Instagram Auth Redirect</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h2>Instagram Authorization</h2>
+        <div class="spinner"></div>
+        <p id="status">Redirecting to app...</p>
+    </div>
+    
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
+        const state = urlParams.get('state');  // ⚠️ ВАЖНО: передаём state для безопасности
         const error = urlParams.get('error');
+        const errorReason = urlParams.get('error_reason');
+        const errorDescription = urlParams.get('error_description');
+        
+        const statusEl = document.getElementById('status');
         
         if (error) {
-            document.body.innerHTML = '<p style="color:red;">Error: ' + error + '</p>';
+            // Показываем детальную информацию об ошибке
+            statusEl.innerHTML = `<p style="color: #ff6b6b;">Authorization failed</p>
+                <p style="font-size: 14px;">${error}: ${errorDescription || errorReason || 'Unknown error'}</p>`;
+            console.error('Instagram OAuth Error:', error, errorDescription);
         } else if (code) {
-            const redirectUrl = `chainapp://instagram-callback?code=${code}`;
+            // Включаем state в redirect URL (для CSRF защиты)
+            const redirectUrl = `chainapp://instagram-callback?code=${code}${state ? '&state=' + state : ''}`;
+            console.log('Redirecting to:', redirectUrl);
+            
+            // Пытаемся редиректить
             window.location.href = redirectUrl;
+            
+            // Если редирект не сработал за 2 секунды, показываем ссылку
             setTimeout(() => {
-                document.body.innerHTML = '<p>Redirecting... If not working, <a href="' + redirectUrl + '">click here</a></p>';
-            }, 1000);
+                statusEl.innerHTML = `
+                    <p>If redirect didn't work automatically,</p>
+                    <p><a href="${redirectUrl}">click here to open the app</a></p>
+                `;
+            }, 2000);
         } else {
-            document.body.innerHTML = '<p style="color:red;">No code found</p>';
+            statusEl.innerHTML = '<p style="color: #ff6b6b;">Authorization failed</p><p>No code parameter found</p>';
+            console.error('No code in callback URL');
         }
     </script>
-    <p>Redirecting to app...</p>
 </body>
 </html>
